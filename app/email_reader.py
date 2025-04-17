@@ -38,10 +38,19 @@ def fetch_emails():
 
                 if subject_header:
                     decoded_header = email.header.decode_header(subject_header)
-                    subject = ''.join([
-                        str(text, charset or 'utf-8') if isinstance(text, bytes) else text
-                        for text, charset in decoded_header
-                    ])
+                    subject_parts = []
+                    for text, charset in decoded_header:
+                        try:
+                            if isinstance(text, bytes):
+                                charset = charset or 'utf-8'
+                                subject_parts.append(text.decode(charset, errors='replace'))
+                            else:
+                                subject_parts.append(text)
+                        except (LookupError, UnicodeDecodeError):
+                            # Fallback se o charset for inválido
+                            subject_parts.append(text.decode('utf-8', errors='replace') if isinstance(text, bytes) else str(text))
+                            
+                    subject = ''.join(subject_parts) 
                     subject_sem_acentos = strip_accents(subject.lower())
                     match = pattern.match(subject_sem_acentos)
 
